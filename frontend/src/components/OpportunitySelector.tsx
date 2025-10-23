@@ -58,25 +58,25 @@ export function OpportunitySelector({
                     onDelete(opp.id);
                   }
                 }}
-                className="absolute right-4 top-4 rounded-lg bg-red-100 p-2 text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                className="absolute right-2 top-2 z-10 rounded-lg bg-red-100 p-1.5 text-sm text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                 title="Delete opportunity"
               >
                 🗑️
               </button>
               <button
                 onClick={() => onSelect(opp.id)}
-                className="flex flex-col"
+                className="flex flex-col text-left w-full"
               >
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                <div className="mb-3 flex items-start justify-between gap-2 pr-8">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {opp.name}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
                       {opp.clientName}
                     </p>
                   </div>
-                  <span className="ml-2 shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                     Active
                   </span>
                 </div>
@@ -111,25 +111,25 @@ export function OpportunitySelector({
                         onDelete(opp.id);
                       }
                     }}
-                    className="absolute right-4 top-4 rounded-lg bg-red-100 p-2 text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                    className="absolute right-2 top-2 z-10 rounded-lg bg-red-100 p-1.5 text-sm text-red-600 opacity-0 transition-opacity hover:bg-red-200 group-hover:opacity-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                     title="Delete opportunity"
                   >
                     🗑️
                   </button>
                   <button
                     onClick={() => onSelect(opp.id)}
-                    className="flex flex-col"
+                    className="flex flex-col text-left w-full"
                   >
-                    <div className="mb-3 flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="mb-3 flex items-start justify-between gap-2 pr-8">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {opp.name}
                         </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
                           {opp.clientName}
                         </p>
                       </div>
-                      <span className="ml-2 shrink-0 rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                      <span className="shrink-0 rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-400">
                         {opp.status}
                       </span>
                     </div>
