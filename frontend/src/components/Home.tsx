@@ -70,6 +70,24 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
     setShowOpportunitySelector(true);
   };
 
+  const handleDeleteOpportunity = async (oppId: string) => {
+    try {
+      const response = await fetch(`/opportunities/${oppId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        await refreshOpps();
+        await refresh();
+        setToast({ message: "Opportunity deleted successfully", type: "success" });
+      } else {
+        setToast({ message: "Failed to delete opportunity", type: "error" });
+      }
+    } catch (err) {
+      console.error("Error deleting opportunity:", err);
+      setToast({ message: "Failed to delete opportunity", type: "error" });
+    }
+  };
+
   const handlePhaseChange = async (phase: string) => {
     if (!opportunity) return;
     
@@ -138,6 +156,7 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
           opportunities={opportunities}
           onSelect={handleSelectOpportunity}
           onCreateNew={() => setIsCreateModalOpen(true)}
+          onDelete={handleDeleteOpportunity}
         />
         <CreateOpportunityModal
           isOpen={isCreateModalOpen}

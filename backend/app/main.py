@@ -171,6 +171,16 @@ async def change_opportunity_phase(opp_id: str, request: Request) -> dict[str, A
     }
 
 
+@app.delete("/opportunities/{opp_id}")
+async def delete_opportunity(opp_id: str) -> dict[str, Any]:
+    """Delete an opportunity and all related data."""
+    success = await opportunity_store.delete_opportunity(opp_id)
+    if not success:
+        return {"error": "Opportunity not found"}
+    
+    return {"success": True, "message": "Opportunity deleted successfully"}
+
+
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     return {"status": "healthy"}

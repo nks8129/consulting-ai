@@ -255,6 +255,32 @@ class SupabaseOpportunityStore:
         
         return await self.get_opportunity(opp_id)
     
+    async def delete_opportunity(self, opp_id: str) -> bool:
+        """Delete an opportunity and all related data."""
+        # Check if opportunity exists
+        opp = await self.get_opportunity(opp_id)
+        if not opp:
+            return False
+        
+        # Delete related data (cascading delete)
+        # 1. Delete artifacts
+        self.client.table("artifacts").delete().eq("opportunity_id", opp_id).execute()
+        
+        # 2. Delete phase progress
+        self.client.table("phase_progress").delete().eq("opportunity_id", opp_id).execute()
+        
+        # 3. Clear active opportunity if this was active
+        active_result = self.client.table("active_opportunity").select("*").execute()
+        if active_result.data and active_result.data[0].get("opportunity_id") == opp_id:
+            self.client.table("active_opportunity").update(
+                {"opportunity_id": None}
+            ).eq("id", active_result.data[0]["id"]).execute()
+        
+        # 4. Delete the opportunity itself
+        self.client.table("opportunities").delete().eq("id", opp_id).execute()
+        
+        return True
+    
     def _dict_to_opportunity(self, data: Dict[str, Any]) -> Opportunity:
         """Convert database dict to Opportunity object."""
         # Get phase progress
