@@ -7,7 +7,7 @@ export const CHATKIT_API_URL =
 
 // Domain key for ChatKit - use production key for deployed app
 export const CHATKIT_API_DOMAIN_KEY =
-  import.meta.env.VITE_CHATKIT_API_DOMAIN_KEY ?? "domain_pk_68fa98e869a8819093e1c095d94a057a015ccaa4936761db";
+  import.meta.env.VITE_CHATKIT_API_DOMAIN_KEY ?? "domain_pk_68fa9a38db988190b9958ff5db9f099e06aacb166019d0ae";
 
 export const TASKS_API_URL =
   import.meta.env.VITE_TASKS_API_URL ?? "/tasks";
