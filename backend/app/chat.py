@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Final
 from uuid import uuid4
@@ -21,9 +22,19 @@ from pydantic import ConfigDict, Field
 
 from .constants import INSTRUCTIONS, MODEL
 from .memory_store import MemoryStore
-from .task_store import TaskStatus, task_store
 from .consulting_store import consulting_store
-from .opportunity_store import opportunity_store, OpportunityPhase
+from .opportunity_store import OpportunityPhase
+from .task_store import TaskStatus
+
+# Use Supabase if configured, otherwise fall back to in-memory
+USE_SUPABASE = os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY")
+
+if USE_SUPABASE:
+    from .supabase_store import supabase_task_store as task_store
+    from .supabase_store import supabase_opportunity_store as opportunity_store
+else:
+    from .task_store import task_store
+    from .opportunity_store import opportunity_store
 
 SUPPORTED_COLOR_SCHEMES: Final[frozenset[str]] = frozenset({"light", "dark"})
 
