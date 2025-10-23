@@ -141,22 +141,40 @@ Edit `backend/app/constants.py` to:
 
 ## 🚀 Deployment
 
-### Option 1: Vercel + Supabase (Recommended)
-- Frontend: Vercel
-- Backend: Vercel Serverless Functions
-- Database: Supabase PostgreSQL
-- Cost: Free tier available
+### Quick Deploy with Supabase + Vercel (20 minutes)
 
-### Option 2: Docker
-```bash
-# Coming soon: Docker Compose setup
-docker-compose up
-```
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/consulting-ai)
 
-### Option 3: AWS/GCP
-- Frontend: S3 + CloudFront / Cloud Storage
-- Backend: ECS/EKS / Cloud Run
-- Database: RDS / Cloud SQL
+**Prerequisites:**
+- ✅ Supabase account (free) - [supabase.com](https://supabase.com)
+- ✅ Vercel account (free) - [vercel.com](https://vercel.com)
+- ✅ OpenAI API key - [platform.openai.com](https://platform.openai.com)
+
+**Quick Start:**
+
+1. **Set up Supabase** (10-15 min) - [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+   - Create project
+   - Run SQL schema
+   - Get API credentials
+
+2. **Deploy to Vercel** (5 min) - [DEPLOY_QUICK_START.md](./DEPLOY_QUICK_START.md)
+   - Push to GitHub
+   - Import to Vercel
+   - Add environment variables
+   - Deploy!
+
+**📖 Full Guides:**
+- [DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md) - What changed & overview
+- [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Database setup guide
+- [DEPLOY_QUICK_START.md](./DEPLOY_QUICK_START.md) - Deployment steps
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete documentation
+
+### Other Deployment Options
+
+- **Netlify**: Similar to Vercel, great alternative
+- **Railway**: Full-stack hosting with database support
+- **Docker**: Coming soon - containerized deployment
+- **AWS/GCP**: Enterprise-grade cloud deployment
 
 ## 🔐 Security Notes
 

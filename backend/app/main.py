@@ -2,7 +2,17 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Any
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent / ".env"
+    load_dotenv(dotenv_path=env_path)
+except ImportError:
+    pass  # python-dotenv not installed
 
 from chatkit.server import StreamingResult
 from fastapi import Depends, FastAPI, Request
@@ -11,8 +21,16 @@ from fastapi.responses import Response, StreamingResponse
 from starlette.responses import JSONResponse
 
 from .chat import ConsultingAIServer, create_chatkit_server
-from .task_store import task_store
-from .opportunity_store import opportunity_store
+
+# Use Supabase if configured, otherwise fall back to in-memory
+USE_SUPABASE = os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY")
+
+if USE_SUPABASE:
+    from .supabase_store import supabase_task_store as task_store
+    from .supabase_store import supabase_opportunity_store as opportunity_store
+else:
+    from .task_store import task_store
+    from .opportunity_store import opportunity_store
 
 app = FastAPI(title="Consulting AI API")
 
