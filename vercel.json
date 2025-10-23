@@ -1,34 +1,19 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install",
+  "rewrites": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "source": "/chatkit/:path*",
+      "destination": "/api/index"
     },
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/chatkit/(.*)",
-      "dest": "/api/index.py"
+      "source": "/tasks/:path*",
+      "destination": "/api/index"
     },
     {
-      "src": "/tasks/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/opportunities/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
+      "source": "/opportunities/:path*",
+      "destination": "/api/index"
     }
   ]
 }
