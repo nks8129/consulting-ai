@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/opportunities/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/tasks/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/chatkit/:path*",
+      "destination": "/api/index"
+    }
+  ]
+}

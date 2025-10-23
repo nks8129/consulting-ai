@@ -14,3 +14,7 @@ from mangum import Mangum
 
 # Mangum adapter for AWS Lambda/Vercel
 handler = Mangum(app, lifespan="off")
+
+# Vercel requires the handler to be the default export
+def handler_wrapper(event, context):
+    return handler(event, context)
