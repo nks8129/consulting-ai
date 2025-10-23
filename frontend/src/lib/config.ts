@@ -5,8 +5,10 @@ export const THEME_STORAGE_KEY = "consulting-ai-theme";
 export const CHATKIT_API_URL =
   import.meta.env.VITE_CHATKIT_API_URL ?? "/chatkit";
 
+// Domain key is optional - only needed for localhost development
+// In production, ChatKit works without it
 export const CHATKIT_API_DOMAIN_KEY =
-  import.meta.env.VITE_CHATKIT_API_DOMAIN_KEY ?? "domain_pk_localhost_dev";
+  import.meta.env.VITE_CHATKIT_API_DOMAIN_KEY ?? undefined;
 
 export const TASKS_API_URL =
   import.meta.env.VITE_TASKS_API_URL ?? "/tasks";
