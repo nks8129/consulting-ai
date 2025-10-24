@@ -26,7 +26,7 @@ export function OpportunitySelector({
             Consulting AI Assistant
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            {isLoading ? "Loading opportunities..." : "Select an opportunity to continue, or create a new one"}
+            Select an opportunity to continue, or create a new one
           </p>
         </div>
 
