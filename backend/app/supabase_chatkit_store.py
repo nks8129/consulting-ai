@@ -8,8 +8,12 @@ from typing import Any, Dict, List
 
 from chatkit.store import NotFoundError, Store
 from chatkit.types import Attachment, Page, Thread, ThreadItem, ThreadMetadata
+from pydantic import TypeAdapter
 
 from .supabase_store import SupabaseClient
+
+# Type adapter for deserializing ThreadItem union
+thread_item_adapter = TypeAdapter(ThreadItem)
 
 
 class SupabaseChatKitStore(Store[dict[str, Any]]):
@@ -33,18 +37,24 @@ class SupabaseChatKitStore(Store[dict[str, Any]]):
 
     # -- Thread metadata -------------------------------------------------
     async def load_thread(self, thread_id: str, context: dict[str, Any]) -> ThreadMetadata:
-        result = self.client.table("chatkit_threads").select("*").eq("id", thread_id).execute()
-        
-        if not result.data:
+        try:
+            result = self.client.table("chatkit_threads").select("*").eq("id", thread_id).execute()
+            
+            if not result.data:
+                raise NotFoundError(f"Thread {thread_id} not found")
+            
+            data = result.data[0]
+            return ThreadMetadata(
+                id=data["id"],
+                title=data.get("title"),
+                created_at=datetime.fromisoformat(data["created_at"].replace("Z", "+00:00")),
+                **(data.get("metadata", {}) or {})
+            )
+        except NotFoundError:
+            raise
+        except Exception as e:
+            print(f"ERROR loading thread {thread_id}: {e}")
             raise NotFoundError(f"Thread {thread_id} not found")
-        
-        data = result.data[0]
-        return ThreadMetadata(
-            id=data["id"],
-            title=data.get("title"),
-            created_at=datetime.fromisoformat(data["created_at"].replace("Z", "+00:00")),
-            **(data.get("metadata", {}) or {})
-        )
 
     async def save_thread(self, thread: ThreadMetadata, context: dict[str, Any]) -> None:
         metadata = self._coerce_thread_metadata(thread)
@@ -158,9 +168,9 @@ class SupabaseChatKitStore(Store[dict[str, Any]]):
         
         items = []
         for data in result.data[:limit]:
-            # Deserialize ThreadItem from JSONB
+            # Deserialize ThreadItem from JSONB using TypeAdapter
             content = data["content"]
-            item = ThreadItem.model_validate(content)
+            item = thread_item_adapter.validate_python(content)
             items.append(item)
         
         has_more = len(result.data) > limit
@@ -214,7 +224,7 @@ class SupabaseChatKitStore(Store[dict[str, Any]]):
             raise NotFoundError(f"Item {item_id} not found")
         
         content = result.data[0]["content"]
-        return ThreadItem.model_validate(content)
+        return thread_item_adapter.validate_python(content)
 
     async def delete_thread_item(
         self, thread_id: str, item_id: str, context: dict[str, Any]

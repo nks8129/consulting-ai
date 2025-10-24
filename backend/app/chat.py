@@ -65,7 +65,7 @@ def _is_tool_completion_item(item: Any) -> bool:
 
 class ConsultingAgentContext(AgentContext):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    store: MemoryStore = Field(exclude=True)
+    store: Any = Field(exclude=True)  # Can be MemoryStore or SupabaseChatKitStore
     request_context: dict[str, Any]
 
 
@@ -565,10 +565,18 @@ class ConsultingAIServer(ChatKitServer[dict[str, Any]]):
     def __init__(self) -> None:
         # Use Supabase store if configured, otherwise fall back to memory
         if USE_SUPABASE:
-            from .supabase_chatkit_store import supabase_chatkit_store
-            self.store = supabase_chatkit_store
+            try:
+                from .supabase_chatkit_store import supabase_chatkit_store
+                self.store = supabase_chatkit_store
+                print("INFO: Using Supabase ChatKit store for persistent conversations")
+            except Exception as e:
+                print(f"WARNING: Failed to initialize Supabase ChatKit store: {e}")
+                print("WARNING: Falling back to in-memory store. Conversations will not persist.")
+                self.store = MemoryStore()
         else:
             self.store = MemoryStore()
+            print("INFO: Using in-memory ChatKit store (conversations will not persist)")
+        
         super().__init__(self.store)
         self.agent = build_consulting_agent()
     
