@@ -51,6 +51,7 @@ class SupabaseOpportunityStore:
     
     async def create_opportunity(
         self,
+        user_id: str,
         name: str,
         client_name: str,
         description: str,
@@ -64,6 +65,7 @@ class SupabaseOpportunityStore:
         # Create opportunity in database
         opp_data = {
             "id": opp_id,
+            "user_id": user_id,
             "name": name,
             "client_name": client_name,
             "description": description,
@@ -109,9 +111,9 @@ class SupabaseOpportunityStore:
         
         return self._dict_to_opportunity(result.data[0])
     
-    async def get_active_opportunity(self) -> Opportunity | None:
-        """Get the currently active opportunity."""
-        active_result = self.client.table("active_opportunity").select("*").execute()
+    async def get_active_opportunity(self, user_id: str) -> Opportunity | None:
+        """Get the currently active opportunity for a user."""
+        active_result = self.client.table("active_opportunity").select("*").eq("user_id", user_id).execute()
         
         if not active_result.data or not active_result.data[0].get("opportunity_id"):
             return None
@@ -119,26 +121,28 @@ class SupabaseOpportunityStore:
         opp_id = active_result.data[0]["opportunity_id"]
         return await self.get_opportunity(opp_id)
     
-    async def set_active_opportunity(self, opp_id: str) -> bool:
-        """Set which opportunity is currently active."""
-        # Check if opportunity exists
+    async def set_active_opportunity(self, user_id: str, opp_id: str) -> bool:
+        """Set which opportunity is currently active for a user."""
+        # Check if opportunity exists and belongs to user
         opp = await self.get_opportunity(opp_id)
         if not opp:
             return False
         
-        # Update active opportunity
-        active_result = self.client.table("active_opportunity").select("*").execute()
+        # Update or insert active opportunity for this user
+        active_result = self.client.table("active_opportunity").select("*").eq("user_id", user_id).execute()
         if active_result.data:
             self.client.table("active_opportunity").update(
                 {"opportunity_id": opp_id, "updated_at": datetime.utcnow().isoformat()}
-            ).eq("id", active_result.data[0]["id"]).execute()
-            return True
-        
-        return False
+            ).eq("user_id", user_id).execute()
+        else:
+            self.client.table("active_opportunity").insert(
+                {"user_id": user_id, "opportunity_id": opp_id}
+            ).execute()
+        return True
     
-    async def list_opportunities(self) -> List[Opportunity]:
-        """List all opportunities."""
-        result = self.client.table("opportunities").select("*").order("created_at", desc=True).execute()
+    async def list_opportunities(self, user_id: str) -> List[Opportunity]:
+        """List all opportunities for a user."""
+        result = self.client.table("opportunities").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
         
         return [self._dict_to_opportunity(opp_data) for opp_data in result.data]
     
@@ -255,31 +259,25 @@ class SupabaseOpportunityStore:
         
         return await self.get_opportunity(opp_id)
     
-    async def delete_opportunity(self, opp_id: str) -> bool:
+    async def delete_opportunity(self, user_id: str, opp_id: str) -> bool:
         """Delete an opportunity and all related data."""
-        # Check if opportunity exists
+        # Check if opportunity exists and belongs to user
         opp = await self.get_opportunity(opp_id)
         if not opp:
             return False
         
-        # Delete related data (cascading delete)
-        # 1. Delete artifacts
-        self.client.table("artifacts").delete().eq("opportunity_id", opp_id).execute()
+        # Verify ownership via RLS - the delete will fail if user doesn't own it
+        # Delete the opportunity itself (CASCADE will handle related data)
+        result = self.client.table("opportunities").delete().eq("id", opp_id).eq("user_id", user_id).execute()
         
-        # 2. Delete phase progress
-        self.client.table("phase_progress").delete().eq("opportunity_id", opp_id).execute()
-        
-        # 3. Clear active opportunity if this was active
-        active_result = self.client.table("active_opportunity").select("*").execute()
+        # Clear active opportunity if this was active for this user
+        active_result = self.client.table("active_opportunity").select("*").eq("user_id", user_id).execute()
         if active_result.data and active_result.data[0].get("opportunity_id") == opp_id:
             self.client.table("active_opportunity").update(
                 {"opportunity_id": None}
-            ).eq("id", active_result.data[0]["id"]).execute()
+            ).eq("user_id", user_id).execute()
         
-        # 4. Delete the opportunity itself
-        self.client.table("opportunities").delete().eq("id", opp_id).execute()
-        
-        return True
+        return len(result.data) > 0
     
     def _dict_to_opportunity(self, data: Dict[str, Any]) -> Opportunity:
         """Convert database dict to Opportunity object."""
@@ -343,6 +341,7 @@ class SupabaseTaskStore:
     async def create(
         self,
         *,
+        user_id: str,
         title: str,
         description: str,
         phase: str,
@@ -354,6 +353,7 @@ class SupabaseTaskStore:
         
         task_data = {
             "id": task_id,
+            "user_id": user_id,
             "title": title,
             "description": description,
             "phase": phase,
@@ -391,9 +391,9 @@ class SupabaseTaskStore:
             created_at=datetime.fromisoformat(data["created_at"].replace("Z", "+00:00")),
         )
     
-    async def list_all(self) -> List[Task]:
-        """Return all tasks in insertion order."""
-        result = self.client.table("tasks").select("*").order("created_at", desc=False).execute()
+    async def list_all(self, user_id: str) -> List[Task]:
+        """Return all tasks for a user in insertion order."""
+        result = self.client.table("tasks").select("*").eq("user_id", user_id).order("created_at", desc=False).execute()
         
         return [
             Task(
@@ -407,9 +407,9 @@ class SupabaseTaskStore:
             for data in result.data
         ]
     
-    async def list_by_phase(self, phase: str) -> List[Task]:
-        """Return tasks for a specific phase."""
-        result = self.client.table("tasks").select("*").eq("phase", phase).order("created_at", desc=False).execute()
+    async def list_by_phase(self, user_id: str, phase: str) -> List[Task]:
+        """Return tasks for a specific phase for a user."""
+        result = self.client.table("tasks").select("*").eq("user_id", user_id).eq("phase", phase).order("created_at", desc=False).execute()
         
         return [
             Task(

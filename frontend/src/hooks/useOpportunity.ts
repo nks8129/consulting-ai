@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { authFetch } from "../lib/api";
 
 export interface PhaseProgress {
   phase: string;
@@ -56,7 +57,7 @@ export function useOpportunity() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch("/opportunities/active");
+      const response = await authFetch("/opportunities/active");
       if (!response.ok) {
         throw new Error("Failed to fetch opportunity");
       }
@@ -88,7 +89,7 @@ export function useOpportunities() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch("/opportunities");
+      const response = await authFetch("/opportunities");
       if (!response.ok) {
         throw new Error("Failed to fetch opportunities");
       }

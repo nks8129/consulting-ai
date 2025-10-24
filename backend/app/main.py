@@ -21,6 +21,7 @@ from fastapi.responses import Response, StreamingResponse
 from starlette.responses import JSONResponse
 
 from .chat import ConsultingAIServer, create_chatkit_server
+from .auth import get_current_user_id
 
 # Use Supabase if configured, otherwise fall back to in-memory
 USE_SUPABASE = os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY")
@@ -50,10 +51,13 @@ def get_server() -> ConsultingAIServer:
 
 @app.post("/chatkit")
 async def chatkit_endpoint(
-    request: Request, server: ConsultingAIServer = Depends(get_server)
+    request: Request, 
+    server: ConsultingAIServer = Depends(get_server),
+    user_id: str = Depends(get_current_user_id)
 ) -> Response:
     payload = await request.body()
-    result = await server.process(payload, {"request": request})
+    # Pass user_id in context for ChatKit store
+    result = await server.process(payload, {"request": request, "user_id": user_id})
     if isinstance(result, StreamingResult):
         return StreamingResponse(result, media_type="text/event-stream")
     if hasattr(result, "json"):
@@ -62,20 +66,20 @@ async def chatkit_endpoint(
 
 
 @app.get("/tasks")
-async def list_tasks() -> dict[str, Any]:
-    tasks = await task_store.list_all()
+async def list_tasks(user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
+    tasks = await task_store.list_all(user_id)
     return {"tasks": [task.as_dict() for task in tasks]}
 
 
 @app.get("/opportunities")
-async def list_opportunities() -> dict[str, Any]:
-    opportunities = await opportunity_store.list_opportunities()
+async def list_opportunities(user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
+    opportunities = await opportunity_store.list_opportunities(user_id)
     return {"opportunities": [opp.as_dict() for opp in opportunities]}
 
 
 @app.get("/opportunities/active")
-async def get_active_opportunity() -> dict[str, Any]:
-    opp = await opportunity_store.get_active_opportunity()
+async def get_active_opportunity(user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
+    opp = await opportunity_store.get_active_opportunity(user_id)
     if not opp:
         return {"opportunity": None}
     
@@ -90,7 +94,7 @@ async def get_active_opportunity() -> dict[str, Any]:
 
 
 @app.post("/opportunities")
-async def create_opportunity_api(request: Request) -> dict[str, Any]:
+async def create_opportunity_api(request: Request, user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
     data = await request.json()
     
     stakeholders = []
@@ -98,6 +102,7 @@ async def create_opportunity_api(request: Request) -> dict[str, Any]:
         stakeholders = [s.strip() for s in data["stakeholders"].split(",") if s.strip()]
     
     opp = await opportunity_store.create_opportunity(
+        user_id=user_id,
         name=data["name"],
         client_name=data["clientName"],
         description=data["description"],
@@ -108,8 +113,8 @@ async def create_opportunity_api(request: Request) -> dict[str, Any]:
 
 
 @app.post("/opportunities/{opp_id}/activate")
-async def set_active_opportunity(opp_id: str) -> dict[str, Any]:
-    success = await opportunity_store.set_active_opportunity(opp_id)
+async def set_active_opportunity(opp_id: str, user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
+    success = await opportunity_store.set_active_opportunity(user_id, opp_id)
     if not success:
         return {"error": "Opportunity not found"}
     
@@ -118,7 +123,7 @@ async def set_active_opportunity(opp_id: str) -> dict[str, Any]:
 
 
 @app.post("/opportunities/{opp_id}/artifacts")
-async def add_artifact_to_opportunity(opp_id: str, request: Request) -> dict[str, Any]:
+async def add_artifact_to_opportunity(opp_id: str, request: Request, user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
     """Add an artifact to an opportunity."""
     data = await request.json()
     
@@ -146,7 +151,7 @@ async def add_artifact_to_opportunity(opp_id: str, request: Request) -> dict[str
 
 
 @app.post("/opportunities/{opp_id}/phase")
-async def change_opportunity_phase(opp_id: str, request: Request) -> dict[str, Any]:
+async def change_opportunity_phase(opp_id: str, request: Request, user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
     """Change the current phase of an opportunity."""
     data = await request.json()
     phase = data.get("phase")
@@ -172,9 +177,9 @@ async def change_opportunity_phase(opp_id: str, request: Request) -> dict[str, A
 
 
 @app.delete("/opportunities/{opp_id}")
-async def delete_opportunity(opp_id: str) -> dict[str, Any]:
+async def delete_opportunity(opp_id: str, user_id: str = Depends(get_current_user_id)) -> dict[str, Any]:
     """Delete an opportunity and all related data."""
-    success = await opportunity_store.delete_opportunity(opp_id)
+    success = await opportunity_store.delete_opportunity(user_id, opp_id)
     if not success:
         return {"error": "Opportunity not found"}
     

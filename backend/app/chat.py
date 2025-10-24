@@ -140,11 +140,15 @@ Be specific, cite recent developments, and provide actionable insights."""
         analysis_type: str,  # pain_points, requirements, risks, stakeholder_feedback, trends
         phase: str | None = None,
     ) -> Dict[str, Any]:
-        """Analyze captured artifacts for insights using o1-mini for advanced reasoning."""
+        """Analyze artifacts and generate deep insights, patterns, or strategic recommendations using o1-mini for advanced reasoning."""
         try:
             from openai import AsyncOpenAI
             
-            opp = await opportunity_store.get_active_opportunity()
+            user_id = ctx.state.get("user_id")
+            if not user_id:
+                return {"error": "User not authenticated"}
+            
+            opp = await opportunity_store.get_active_opportunity(user_id)
             if not opp:
                 return {"error": "No active opportunity"}
             
@@ -219,7 +223,11 @@ Be specific and actionable."""
     ) -> Dict[str, Any]:
         """Search through captured artifacts."""
         try:
-            opp = await opportunity_store.get_active_opportunity()
+            user_id = ctx.state.get("user_id")
+            if not user_id:
+                return {"error": "User not authenticated"}
+            
+            opp = await opportunity_store.get_active_opportunity(user_id)
             if not opp:
                 return {"error": "No active opportunity"}
             
@@ -263,7 +271,11 @@ Be specific and actionable."""
     ) -> Dict[str, str]:
         """Move opportunity to a new phase."""
         try:
-            opp = await opportunity_store.get_active_opportunity()
+            user_id = ctx.state.get("user_id")
+            if not user_id:
+                return {"error": "User not authenticated"}
+            
+            opp = await opportunity_store.get_active_opportunity(user_id)
             if not opp:
                 return {"error": "No active opportunity"}
             
@@ -294,7 +306,11 @@ Be specific and actionable."""
     ) -> Dict[str, Any]:
         """Retrieve active opportunity details."""
         try:
-            opp = await opportunity_store.get_active_opportunity()
+            user_id = ctx.state.get("user_id")
+            if not user_id:
+                return {"error": "User not authenticated"}
+            
+            opp = await opportunity_store.get_active_opportunity(user_id)
             if not opp:
                 return {"error": "No active opportunity"}
             
@@ -635,7 +651,14 @@ Generate only the title, nothing else:"""
         message_text = _user_message_text(item)
         
         # Get active opportunity for context
-        opp = await opportunity_store.get_active_opportunity()
+        user_id = context.get("user_id")
+        if not user_id:
+            yield AssistantMessageStreamEvent(
+                content=AssistantMessageStreamContent(text="Error: User not authenticated")
+            )
+            return
+        
+        opp = await opportunity_store.get_active_opportunity(user_id)
         
         # Auto-generate thread title on first message
         # Check if this is the first message in the thread

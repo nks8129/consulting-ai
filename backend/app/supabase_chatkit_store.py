@@ -59,14 +59,20 @@ class SupabaseChatKitStore(Store[dict[str, Any]]):
     async def save_thread(self, thread: ThreadMetadata, context: dict[str, Any]) -> None:
         metadata = self._coerce_thread_metadata(thread)
         
-        # Get active opportunity to link thread
-        active_result = self.client.table("active_opportunity").select("*").execute()
+        # Extract user_id from context (passed from chat endpoint)
+        user_id = context.get("user_id")
+        if not user_id:
+            raise ValueError("user_id must be provided in context")
+        
+        # Get active opportunity for this user to link thread
+        active_result = self.client.table("active_opportunity").select("*").eq("user_id", user_id).execute()
         opportunity_id = None
         if active_result.data and active_result.data[0].get("opportunity_id"):
             opportunity_id = active_result.data[0]["opportunity_id"]
         
         thread_data = {
             "id": metadata.id,
+            "user_id": user_id,
             "opportunity_id": opportunity_id,
             "title": metadata.title,
             "created_at": metadata.created_at.isoformat() if metadata.created_at else datetime.utcnow().isoformat(),
@@ -91,7 +97,12 @@ class SupabaseChatKitStore(Store[dict[str, Any]]):
         order: str,
         context: dict[str, Any],
     ) -> Page[ThreadMetadata]:
-        query = self.client.table("chatkit_threads").select("*")
+        # Extract user_id from context
+        user_id = context.get("user_id")
+        if not user_id:
+            raise ValueError("user_id must be provided in context")
+        
+        query = self.client.table("chatkit_threads").select("*").eq("user_id", user_id)
         
         # Order by created_at
         if order == "desc":

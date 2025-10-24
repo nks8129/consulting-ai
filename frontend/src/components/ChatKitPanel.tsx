@@ -7,6 +7,7 @@ import {
   STARTER_PROMPTS,
   PLACEHOLDER_INPUT,
 } from "../lib/config";
+import { supabase } from "../lib/supabase";
 
 type ChatKitPanelProps = {
   theme: ColorScheme;
@@ -24,6 +25,16 @@ export function ChatKitPanel({
     api: {
       url: CHATKIT_API_URL,
       domainKey: CHATKIT_API_DOMAIN_KEY,
+      fetch: async (url, options) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return fetch(url, {
+          ...options,
+          headers: {
+            ...options?.headers,
+            Authorization: `Bearer ${session?.access_token || ''}`,
+          },
+        });
+      },
     },
     theme: {
       colorScheme: theme,

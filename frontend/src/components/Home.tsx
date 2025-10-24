@@ -7,6 +7,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Toast } from "./Toast";
 import { useOpportunity, useOpportunities } from "../hooks/useOpportunity";
 import type { ColorScheme } from "../hooks/useColorScheme";
+import { useAuth } from "../contexts/AuthContext";
+import { authFetch } from "../lib/api";
 
 type HomeProps = {
   scheme: ColorScheme;
@@ -16,6 +18,7 @@ type HomeProps = {
 export default function Home({ scheme, onThemeChange }: HomeProps) {
   const { opportunity, phaseArtifacts, allArtifacts, loading, error, refresh } = useOpportunity();
   const { opportunities, loading: oppsLoading, refresh: refreshOpps } = useOpportunities();
+  const { user, signOut } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showOpportunitySelector, setShowOpportunitySelector] = useState(true);
   const [chatKey, setChatKey] = useState(0); // Force ChatKit to remount on opportunity change
@@ -46,7 +49,7 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
     try {
       setIsTransitioning(true);
       setIsCreating(false); // Reset creating state
-      const response = await fetch(`/opportunities/${oppId}/activate`, {
+      const response = await authFetch(`/opportunities/${oppId}/activate`, {
         method: "POST",
       });
       if (response.ok) {
@@ -72,9 +75,8 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
       setIsCreating(true);
       
       // Step 1: Create the opportunity (shows "Creating opportunity..." overlay)
-      const response = await fetch("/opportunities", {
+      const response = await authFetch("/opportunities", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
       
@@ -86,7 +88,7 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
         setIsTransitioning(true);
         
         // Step 3: Activate the opportunity
-        const activateResponse = await fetch(`/opportunities/${result.opportunity.id}/activate`, {
+        const activateResponse = await authFetch(`/opportunities/${result.opportunity.id}/activate`, {
           method: "POST",
         });
         
@@ -115,7 +117,7 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
 
   const handleDeleteOpportunity = async (oppId: string) => {
     try {
-      const response = await fetch(`/opportunities/${oppId}`, {
+      const response = await authFetch(`/opportunities/${oppId}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -135,9 +137,8 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
     if (!opportunity) return;
     
     try {
-      const response = await fetch(`/opportunities/${opportunity.id}/phase`, {
+      const response = await authFetch(`/opportunities/${opportunity.id}/phase`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phase }),
       });
 
@@ -160,9 +161,8 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
     if (!opportunity) return;
     
     try {
-      const response = await fetch(`/opportunities/${opportunity.id}/artifacts`, {
+      const response = await authFetch(`/opportunities/${opportunity.id}/artifacts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: artifact.type,
           title: artifact.title,
@@ -313,12 +313,33 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* User Info */}
+          {user && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <img 
+                src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}`} 
+                alt="User" 
+                className="h-8 w-8 rounded-full"
+              />
+              <span className="hidden md:inline">{user.email}</span>
+            </div>
+          )}
+          
           <button
             onClick={handleChangeOpportunity}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Switch Opportunity
           </button>
+          
+          <button
+            onClick={() => signOut()}
+            className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+            title="Sign out"
+          >
+            Sign Out
+          </button>
+          
           <ThemeToggle value={scheme} onChange={onThemeChange} />
         </div>
       </div>
