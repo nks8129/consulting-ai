@@ -94,8 +94,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ChatKit threads table (stores conversation threads)
+CREATE TABLE IF NOT EXISTS chatkit_threads (
+  id TEXT PRIMARY KEY,
+  opportunity_id TEXT REFERENCES opportunities(id) ON DELETE CASCADE,
+  title TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  metadata JSONB DEFAULT '{}'
+);
+
+-- ChatKit thread items table (stores messages in threads)
+CREATE TABLE IF NOT EXISTS chatkit_thread_items (
+  id TEXT PRIMARY KEY,
+  thread_id TEXT REFERENCES chatkit_threads(id) ON DELETE CASCADE,
+  item_type TEXT NOT NULL, -- 'user_message', 'assistant_message', 'tool_call', etc.
+  content JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for ChatKit tables
+CREATE INDEX IF NOT EXISTS idx_chatkit_threads_opportunity ON chatkit_threads(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_chatkit_threads_created ON chatkit_threads(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chatkit_items_thread ON chatkit_thread_items(thread_id);
+CREATE INDEX IF NOT EXISTS idx_chatkit_items_created ON chatkit_thread_items(created_at);
+
 COMMENT ON TABLE opportunities IS 'Consulting engagement opportunities';
 COMMENT ON TABLE artifacts IS 'Documents, notes, and deliverables for opportunities';
 COMMENT ON TABLE tasks IS 'Tasks for consulting engagements';
 COMMENT ON TABLE phase_progress IS 'Progress tracking for each phase of an opportunity';
 COMMENT ON TABLE active_opportunity IS 'Tracks which opportunity is currently active (single row table)';
+COMMENT ON TABLE chatkit_threads IS 'ChatKit conversation threads linked to opportunities';
+COMMENT ON TABLE chatkit_thread_items IS 'Messages and items within ChatKit threads';

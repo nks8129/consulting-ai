@@ -563,7 +563,12 @@ class ConsultingAIServer(ChatKitServer[dict[str, Any]]):
     """ChatKit server for consulting AI assistant."""
     
     def __init__(self) -> None:
-        self.store: MemoryStore = MemoryStore()
+        # Use Supabase store if configured, otherwise fall back to memory
+        if USE_SUPABASE:
+            from .supabase_chatkit_store import supabase_chatkit_store
+            self.store = supabase_chatkit_store
+        else:
+            self.store = MemoryStore()
         super().__init__(self.store)
         self.agent = build_consulting_agent()
     
