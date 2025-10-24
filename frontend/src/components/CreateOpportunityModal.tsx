@@ -4,6 +4,7 @@ interface CreateOpportunityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: OpportunityFormData) => void;
+  isSubmitting?: boolean;
 }
 
 export interface OpportunityFormData {
@@ -17,6 +18,7 @@ export function CreateOpportunityModal({
   isOpen,
   onClose,
   onSubmit,
+  isSubmitting = false,
 }: CreateOpportunityModalProps) {
   const [formData, setFormData] = useState<OpportunityFormData>({
     name: "",
@@ -181,15 +183,20 @@ export function CreateOpportunityModal({
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              disabled={isSubmitting}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Create Opportunity
+              {isSubmitting && (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              )}
+              {isSubmitting ? "Creating..." : "Create Opportunity"}
             </button>
           </div>
         </form>

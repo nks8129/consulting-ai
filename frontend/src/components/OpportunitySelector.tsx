@@ -5,6 +5,7 @@ interface OpportunitySelectorProps {
   onSelect: (id: string) => void;
   onCreateNew: () => void;
   onDelete: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export function OpportunitySelector({
@@ -12,6 +13,7 @@ export function OpportunitySelector({
   onSelect,
   onCreateNew,
   onDelete,
+  isLoading = false,
 }: OpportunitySelectorProps) {
   const activeOpportunities = opportunities.filter((opp) => opp.status === "active");
   const pastOpportunities = opportunities.filter((opp) => opp.status !== "active");
@@ -24,7 +26,7 @@ export function OpportunitySelector({
             Consulting AI Assistant
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Select an opportunity to continue, or create a new one
+            {isLoading ? "Loading opportunities..." : "Select an opportunity to continue, or create a new one"}
           </p>
         </div>
 

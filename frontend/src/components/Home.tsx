@@ -21,6 +21,8 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
   const [chatKey, setChatKey] = useState(0); // Force ChatKit to remount on opportunity change
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Show selector if no opportunity is active
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
 
   const handleSelectOpportunity = async (oppId: string) => {
     try {
+      setIsTransitioning(true);
       const response = await fetch(`/opportunities/${oppId}/activate`, {
         method: "POST",
       });
@@ -41,15 +44,20 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
         await refreshOpps();
         // Force ChatKit to remount with new opportunity context
         setChatKey(prev => prev + 1);
+        // Small delay for smooth transition
+        await new Promise(resolve => setTimeout(resolve, 300));
         setShowOpportunitySelector(false);
       }
     } catch (err) {
       console.error("Error setting active opportunity:", err);
+    } finally {
+      setIsTransitioning(false);
     }
   };
 
   const handleCreateOpportunity = async (data: OpportunityFormData) => {
     try {
+      setIsCreating(true);
       const response = await fetch("/opportunities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,11 +66,15 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
       
       if (response.ok) {
         const result = await response.json();
-        await handleSelectOpportunity(result.opportunity.id);
         setIsCreateModalOpen(false);
+        setToast({ message: "Opportunity created! Loading...", type: "success" });
+        await handleSelectOpportunity(result.opportunity.id);
       }
     } catch (err) {
       console.error("Error creating opportunity:", err);
+      setToast({ message: "Failed to create opportunity", type: "error" });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -152,17 +164,34 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
   if (showOpportunitySelector) {
     return (
       <>
+        {isTransitioning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl dark:bg-slate-800">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600 dark:border-slate-600 dark:border-t-blue-400"></div>
+              <p className="text-lg font-medium text-slate-700 dark:text-slate-300">Loading opportunity...</p>
+            </div>
+          </div>
+        )}
         <OpportunitySelector
           opportunities={opportunities}
           onSelect={handleSelectOpportunity}
           onCreateNew={() => setIsCreateModalOpen(true)}
           onDelete={handleDeleteOpportunity}
+          isLoading={oppsLoading}
         />
         <CreateOpportunityModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={() => !isCreating && setIsCreateModalOpen(false)}
           onSubmit={handleCreateOpportunity}
+          isSubmitting={isCreating}
         />
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </>
     );
   }
@@ -170,8 +199,11 @@ export default function Home({ scheme, onThemeChange }: HomeProps) {
   // Show main chat interface with selected opportunity
   if (!opportunity) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-slate-500">Loading opportunity...</div>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-400"></div>
+          <p className="text-lg font-medium text-slate-600 dark:text-slate-400">Loading opportunity...</p>
+        </div>
       </div>
     );
   }
